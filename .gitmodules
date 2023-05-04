@@ -1,0 +1,3 @@
+[submodule "Plugins/MQTTnet"]
+	path = Plugins/MQTTnet
+	url = https://github.com/dotnet/MQTTnet
