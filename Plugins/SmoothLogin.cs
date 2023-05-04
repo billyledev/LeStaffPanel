@@ -13,7 +13,7 @@ using MCGalaxy.Tasks;
 namespace PluginSmoothLogin {
   public class SmoothLoginPlugin: Plugin {
     public override string creator { get { return "billyledev"; } }
-    public override string MCGalaxy_Version { get { return "1.9.2.2"; } }
+    public override string MCGalaxy_Version { get { return "1.9.4.8"; } }
     public override string name { get { return "SmoothLoginPlugin"; } }
 
     public const string PLAYERS_TABLE = "Players";
