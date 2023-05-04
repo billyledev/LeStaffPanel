@@ -1,0 +1,10 @@
+[
+  {
+    "id": "cape1",
+    "type": "cosmetic|cape",
+    "name": "Lightning cape",
+    "description": "Feel the power of the lightning!",
+    "picture": "https://i.imgur.com/hzHiOCc.jpg",
+    "cost": 100
+  }
+]

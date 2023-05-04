@@ -1,0 +1,11 @@
+node_modules
+dist
+secrets.ts
+config.ts
+store.json
+skins
+temp
+logs
+key.pem
+csr.pem
+cert.pem
