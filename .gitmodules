@@ -1,3 +1,9 @@
 [submodule "Plugins/MQTTnet"]
 	path = Plugins/MQTTnet
 	url = https://github.com/dotnet/MQTTnet
+[submodule "Plugins/MCGalaxy"]
+	path = Plugins/MCGalaxy
+	url = https://github.com/UnknownShadow200/MCGalaxy
+[submodule "Plugins/Newtonsoft.Json"]
+	path = Plugins/Newtonsoft.Json
+	url = https://github.com/JamesNK/Newtonsoft.Json
