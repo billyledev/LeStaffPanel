@@ -23,6 +23,9 @@ namespace PluginLeStaffPanel {
     public override string MCGalaxy_Version { get { return "1.9.4.8"; } }
     public override string name { get { return "LeStaffPanelPlugin"; } }
 
+    private const string SERVER_EVENTS_TOPIC = "server/events";
+    private const string PANEL_ACTIONS_TOPIC = "panel/actions";
+
     private static readonly MqttFactory mqttFactory = new MqttFactory();
     private static readonly MqttClientOptionsBuilder mqttClientOptionsBuilder = new MqttClientOptionsBuilder()
       .WithTcpServer("localhost");
@@ -35,21 +38,13 @@ namespace PluginLeStaffPanel {
       .Build();
     private static readonly MattTopicFilterBuilder mqttTopicFilterBuilder = new MqttTopicFilterBuilder();
     private static List<MqttTopicFilter> topics = new List<MqttTopicFilter> {
-      mqttTopicFilterBuilder.WithTopic("test").Build(),
+      mqttTopicFilterBuilder.WithTopic(PANEL_ACTIONS_TOPIC).Build(),
     };
     private static readonly IManagedMqttClient mqttClient = mqttFactory.CreateManagedMqttClient();
 
     public override void Load(bool startup) {
       mqttClient.StartAsync(mqttClientOptions);
-
-      string json = JsonConvert.SerializeObject(new {
-        message = "Hello World!",
-        sent = DateTimeOffset.UtcNow
-      });
-      mqttClient.EnqueueAsync("test", json);
-
       mqttClient.SubscribeAsync(topics);
-
       mqttClient.ApplicationMessageReceivedAsync += e => {
         try {
           string topic = e.ApplicationMessage.Topic;
@@ -64,10 +59,32 @@ namespace PluginLeStaffPanel {
 
         return Task.CompletedTask;
       };
+
+      OnPlayerConnectEvent.Register(PlayerConnectCallback, Priority.Critical);
+      OnPlayerDisconnectEvent.Register(PlayerDisconnectCallback, Priority.Critical);
     }
 
     public override void Unload(bool startup) {
       mqttClient.StopAsync().GetAwaiter().GetResult();
+
+      OnPlayerConnectEvent.Unregister(PlayerConnectCallback);
+      OnPlayerDisconnectEvent.Unregister(PlayerDisconnectCallback);
+    }
+
+    private void PlayerConnectCallback(Player p) {
+      string payload = JsonConvert.SerializeObject(new {
+        type = "player_connected",
+        username = p.name,
+      });
+      mqttClient.EnqueueAsync(SERVER_EVENTS_TOPIC, payload);
+    }
+
+    private void PlayerDisconnectCallback(Player p, string reason) {
+      string payload = JsonConvert.SerializeObject(new {
+        type = "player_disconnected",
+        username = p.name,
+        reason = reason,
+      });
     }
   }
 }
