@@ -81,7 +81,7 @@ namespace PluginSmoothLogin {
         Logger.LogError("Error reading expiration", e);
       }
 
-      if (!code.Equals(null)) {
+      if (!string.IsNullOrEmpty(code)) {
         loginCodes.Add(code, codeExpiration);
       }
     }
