@@ -47,7 +47,7 @@ namespace PluginSmoothLogin {
       }
 
       // Load the login codes and corresponding expirations.
-      Database.ReadRows(PLAYERS_TABLE, "*", null, LoadCodesInfosCallback);
+      Database.ReadRows(PLAYERS_TABLE, "*", record => LoadCodeInfos(record));
 
       // Regularly checks for expired login codes.
       checkCodesTask = Server.MainScheduler.QueueRepeat(CodeExpirationCheckTask, null, TimeSpan.FromSeconds(CHECK_DELAY));
@@ -70,12 +70,12 @@ namespace PluginSmoothLogin {
       }
     }
 
-    private object LoadCodesInfosCallback(IDataRecord record, object arg) {
-      string code = record.GetString(record.GetOrdinal(CODE_FIELD));
+    private void LoadCodeInfos(ISqlRecord record) {
+      string code = record.GetText(CODE_FIELD);
 
       long codeExpiration;
       try {
-        codeExpiration = record.GetInt64(record.GetOrdinal(CODE_EXP_FIELD));
+        codeExpiration = record.GetLong(CODE_EXP_FIELD);
       } catch (InvalidCastException e) {
         codeExpiration = 0;
         Logger.LogError("Error reading expiration", e);
@@ -84,8 +84,6 @@ namespace PluginSmoothLogin {
       if (!code.Equals(null)) {
         loginCodes.Add(code, codeExpiration);
       }
-
-      return null;
     }
   }
 
