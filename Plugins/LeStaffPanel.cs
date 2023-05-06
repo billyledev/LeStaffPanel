@@ -19,6 +19,13 @@ using MCGalaxy;
 using MCGalaxy.Events.PlayerEvents;
 
 namespace PluginLeStaffPanel {
+  class MqttMessage {
+    public string Type;
+    public string Username;
+    public string Target;
+    public string Reason;
+  }
+
   public class LeStaffPanelPlugin: Plugin {
     public override string creator { get { return "billyledev"; } }
     public override string MCGalaxy_Version { get { return "1.9.4.8"; } }
@@ -43,6 +50,9 @@ namespace PluginLeStaffPanel {
     };
     private static readonly IManagedMqttClient mqttClient = mqttFactory.CreateManagedMqttClient();
 
+    private Command muteCommand = Command.Find("Mute");
+    private Command kickCommand = Command.Find("Kick");
+
     public override void Load(bool startup) {
       mqttClient.StartAsync(mqttClientOptions);
       mqttClient.SubscribeAsync(topics);
@@ -50,9 +60,10 @@ namespace PluginLeStaffPanel {
         try {
           string topic = e.ApplicationMessage.Topic;
 
-          if (string.IsNullOrWhiteSpace(topic) == false) {
+          if (!string.IsNullOrWhiteSpace(topic)) {
             string payload = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
-            Logger.Log(LogType.SystemActivity, "Topic: " + topic + ". Message Received: " + payload);
+            MqttMessage content = JsonConvert.DeserializeObject<MqttMessage>(payload);
+            processMessage(content);
           }
         } catch (Exception ex) {
           Logger.LogError("Error reading expiration", ex);
@@ -86,6 +97,65 @@ namespace PluginLeStaffPanel {
         username = p.name,
         reason = reason,
       });
+    }
+
+    private bool validName(string username) {
+      return Formatter.ValidPlayerName(Player.Console, username);
+    }
+
+    private Player buildShadowPlayer(string username) {
+      Player p = new Player(username);
+      p.group = Group.GroupIn(p.name);
+      return p;
+    }
+
+    private void processMessage(MqttMessage content) {
+      if (content.Username == null ||
+          string.IsNullOrWhiteSpace(content.Username) ||
+          !validName(content.Username)) {
+        return;
+      }
+
+      Player p = PlayerInfo.FindMatches(Player.Console, content.Username);
+      bool online = true;
+
+      if (p == null || !p.name.Equals(content.Username)) {
+        p = buildShadowPlayer(content.Username);
+        online = false;
+      }
+
+      switch (content.Type) {
+        case "mute": {
+          if (content.Target == null ||
+              string.IsNullOrWhiteSpace(content.Target) ||
+              !validName(content.Target)) {
+            break;
+          }
+
+          string args = content.Target;
+
+          muteCommand.Use(p, args);
+          break;
+        }
+
+        case "kick": {
+          if (content.Target == null ||
+              string.IsNullOrWhiteSpace(content.Target) ||
+              !validName(content.Target)) {
+            break;
+          }
+
+          string args = content.Target;
+          if (content.Reason != null && !string.IsNullOrWhiteSpace(content.Reason)) {
+            args += " " + content.Reason;
+          }
+
+          kickCommand.Use(p, args);
+          break;
+        }
+      }
+
+      if (!online) p.Dispose();
     }
   }
 }
