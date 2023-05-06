@@ -37,7 +37,7 @@ namespace PluginLeStaffPanel {
     private static readonly MqttClientDisconnectOptions mqttClientDisconnectOptions = new MqttClientDisconnectOptionsBuilder()
       .WithReason(MqttClientDisconnectOptionsReason.NormalDisconnection)
       .Build();
-    private static readonly MattTopicFilterBuilder mqttTopicFilterBuilder = new MqttTopicFilterBuilder();
+    private static readonly MqttTopicFilterBuilder mqttTopicFilterBuilder = new MqttTopicFilterBuilder();
     private static List<MqttTopicFilter> topics = new List<MqttTopicFilter> {
       mqttTopicFilterBuilder.WithTopic(PANEL_ACTIONS_TOPIC).Build(),
     };
