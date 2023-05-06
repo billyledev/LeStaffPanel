@@ -16,6 +16,7 @@ using MQTTnet.Client;
 using MQTTnet.Extensions.ManagedClient;
 
 using MCGalaxy;
+using MCGalaxy.Events.PlayerEvents;
 
 namespace PluginLeStaffPanel {
   public class LeStaffPanelPlugin: Plugin {
