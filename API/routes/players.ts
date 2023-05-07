@@ -97,7 +97,7 @@ router.post('/login', async (req, res) => {
     });
     logger.info(`${username} logged in.`);
     res.status(StatusCodes.OK).json({
-      status: 'success',
+      username,
       token: jwt_token,
     });
   } catch (error) {
