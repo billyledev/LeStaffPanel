@@ -97,6 +97,7 @@ namespace PluginLeStaffPanel {
         username = p.name,
         reason = reason,
       });
+      mqttClient.EnqueueAsync(SERVER_EVENTS_TOPIC, payload);
     }
 
     private bool validName(string username) {
