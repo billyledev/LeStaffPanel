@@ -20,7 +20,6 @@ import mysql from '@/utils/mysql';
 import mqtt from '@/utils/mqtt';
 
 import players from '@/routes/players';
-import store from '@/routes/store';
 
 const limiter = rateLimit({
   windowMs: 60 * 1000, // Length of the time window
@@ -55,7 +54,6 @@ app.use((req, _res, next) => {
 });
 app.use(cors(corsOptions));
 app.use('/api/players', players);
-app.use('/api/store', store);
 
 /*
   Key generation instructions :
