@@ -18,7 +18,7 @@ import logger from '@/utils/logger';
 import { CODE_REGEX } from '@/utils/regex';
 import mysql from '@/utils/mysql';
 
-import { getPlayerDataFromDB, getUsernameFromCode, deleteCodeFromDB } from '@/models/player';
+import { getPlayerData, validJWTData, getUsernameFromCode, deleteCodeFromDB } from '@/models/player';
 
 const router = Router();
 
@@ -35,7 +35,7 @@ router.get('/infos', async (req, res) => {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    if (!decoded) {
+    if (!decoded || !(await validJWTData(decoded))) {
       res.status(StatusCodes.UNAUTHORIZED).json({
         status: 'error',
         message: 'Invalid token.',
@@ -44,7 +44,7 @@ router.get('/infos', async (req, res) => {
     }
     const { username } = decoded;
 
-    const infos = await getPlayerDataFromDB(username);
+    const infos = await getPlayerData(username);
     logger.info(`${infos.username} requested account informations.`);
     res.status(StatusCodes.OK).json({
       status: 'success',
@@ -88,16 +88,19 @@ router.post('/login', async (req, res) => {
       return;
     }
 
-    await deleteCodeFromDB(username); 
+    await deleteCodeFromDB(username);
+    const data = await getPlayerData(username);
 
     const jwt_token = jwt.sign({
       username,
+      rank: data.rank,
     }, JWT_SECRET, {
       expiresIn: '7d',
     });
     logger.info(`${username} logged in.`);
     res.status(StatusCodes.OK).json({
       username,
+      rank: data.rank,
       token: jwt_token,
     });
   } catch (error) {
@@ -122,7 +125,7 @@ router.get('/wear/:item', async (req, res) => {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    if (!decoded) {
+    if (!decoded || !(await validJWTData(decoded))) {
       res.status(StatusCodes.UNAUTHORIZED).json({
         status: 'error',
         message: 'Invalid token.',
@@ -130,7 +133,7 @@ router.get('/wear/:item', async (req, res) => {
       return;
     }
     const { username } = decoded;
-    const infos = await getPlayerDataFromDB(username);
+    const infos = await getPlayerData(username);
 
     const { item } = req.params;
     if (infos.cosmeticsOwned.indexOf(item) === -1) {

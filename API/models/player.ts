@@ -11,6 +11,29 @@ interface Player {
   wearing?: string;
 }
 
+const playersData: Array<Player> = [];
+
+async function getPlayerData(username) {
+  let playerData = playersData.find(data => data.username === username);
+  
+  if (!playerData) {
+    playerData = await getPlayerDataFromDB(username);
+    playersData.push(playerData);
+  }
+
+  return playerData;
+}
+
+async function validJWTData(data: Player) {
+  const serverData = await getPlayerData(data.username);
+
+  if (data.rank !== serverData.rank) {
+    return false;
+  }
+
+  return true;
+}
+
 function getPlayerDataFromDB(username) {
   return new Promise<Player>((resolve, reject) => {
     mysql.client.query({
@@ -83,7 +106,8 @@ function deleteCodeFromDB(username) {
 }
 
 export {
-  getPlayerDataFromDB,
+  getPlayerData,
+  validJWTData,
   getUsernameFromCode,
   deleteCodeFromDB,
   getRankFromDB,

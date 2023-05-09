@@ -7,7 +7,7 @@ import { JWT_SECRET } from '@/secrets';
 import logger from '@/utils/logger';
 import mysql from '@/utils/mysql';
 
-import { getPlayerDataFromDB } from '@/models/player';
+import { getPlayerData, validJWTData } from '@/models/player';
 import { getStoreData, getItemData } from '@/models/store';
 
 const router = Router();
@@ -42,7 +42,7 @@ router.get('/buy/:item', async (req, res) => {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    if (!decoded) {
+    if (!decoded || !(await validJWTData(decoded))) {
       res.status(StatusCodes.UNAUTHORIZED).json({
         status: 'error',
         message: 'Invalid token.',
@@ -50,7 +50,7 @@ router.get('/buy/:item', async (req, res) => {
       return;
     }
     const { username } = decoded;
-    const infos = await getPlayerDataFromDB(username);
+    const infos = await getPlayerData(username);
 
     const storeData = getStoreData();
     const { item } = req.params;
