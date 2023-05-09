@@ -1,6 +1,7 @@
 import { USERNAME_SUFFIX } from '@/config';
 
 import mysql from '@/utils/mysql';
+import mqtt from '@/utils/mqtt';
 
 interface Player {
   username: string;
@@ -13,6 +14,28 @@ interface Player {
 
 const playersData: Array<Player> = [];
 
+mqtt.client.on('message', async (topic: string, message: string) => {
+  const event = JSON.parse(message);
+
+  switch (event.type) {
+    case 'player_rank': {
+      const playerData = await getPlayerData(event.username);
+      playerData.rank = event.rank;
+      break;
+    }
+
+    case 'player_connected': {
+      getPlayerData(event.username);
+      break;
+    }
+
+    case 'player_disconnected': {
+      clearPlayerData(event.username);
+      break;
+    }
+  }
+});
+
 async function getPlayerData(username) {
   let playerData = playersData.find(data => data.username === username);
   
@@ -22,6 +45,14 @@ async function getPlayerData(username) {
   }
 
   return playerData;
+}
+
+function clearPlayerData(username) {
+  const index = playersData.findIndex(data => data.username === username);
+
+  if (index !== -1) {
+    playersData.splice(index, 1);
+  }
 }
 
 async function validJWTData(data: Player) {

@@ -17,6 +17,7 @@ import {
 
 import logger from '@/utils/logger';
 import mysql from '@/utils/mysql';
+import mqtt from '@/utils/mqtt';
 
 import players from '@/routes/players';
 import store from '@/routes/store';
@@ -70,6 +71,8 @@ const serverOptions = {
   cert: fs.readFileSync(CERT_FILE, 'utf8'),
   ca: fs.readFileSync(CA_FILE, 'utf8'),
 };
+
+mqtt.client.subscribe('server/events');
 
 https.createServer(serverOptions, app).listen(API_PORT);
 logger.info(`API running on port ${API_PORT}`);
