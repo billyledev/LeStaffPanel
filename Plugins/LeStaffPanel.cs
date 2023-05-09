@@ -16,6 +16,8 @@ using MQTTnet.Client;
 using MQTTnet.Extensions.ManagedClient;
 
 using MCGalaxy;
+using MCGalaxy.SQL;
+using MCGalaxy.Events;
 using MCGalaxy.Events.PlayerEvents;
 
 namespace PluginLeStaffPanel {
@@ -53,7 +55,19 @@ namespace PluginLeStaffPanel {
     private Command muteCommand = Command.Find("Mute");
     private Command kickCommand = Command.Find("Kick");
 
+    public const string PLAYERS_TABLE = "Players";
+    public const string NAME_FIELD = "Name";
+    public const string RANK_FIELD = "Rank";
+
     public override void Load(bool startup) {
+      // Add the required column if missing
+      List<string> columns = Database.Backend.ColumnNames(PLAYERS_TABLE);
+      if (columns.Count != 0) {
+        if (!columns.CaselessContains(RANK_FIELD)) {
+          Database.AddColumn(PLAYERS_TABLE, new ColumnDesc(RANK_FIELD, ColumnType.Int8), NAME_FIELD);
+        }
+      }
+
       mqttClient.StartAsync(mqttClientOptions);
       mqttClient.SubscribeAsync(topics);
       mqttClient.ApplicationMessageReceivedAsync += e => {
@@ -74,6 +88,7 @@ namespace PluginLeStaffPanel {
 
       OnPlayerConnectEvent.Register(PlayerConnectCallback, Priority.Critical);
       OnPlayerDisconnectEvent.Register(PlayerDisconnectCallback, Priority.Critical);
+      OnModActionEvent.Register(HandleModerationAction, Priority.Critical);
     }
 
     public override void Unload(bool startup) {
@@ -81,6 +96,7 @@ namespace PluginLeStaffPanel {
 
       OnPlayerConnectEvent.Unregister(PlayerConnectCallback);
       OnPlayerDisconnectEvent.Unregister(PlayerDisconnectCallback);
+      OnModActionEvent.Unregister(HandleModerationAction);
     }
 
     private void PlayerConnectCallback(Player p) {
@@ -98,6 +114,30 @@ namespace PluginLeStaffPanel {
         reason = reason,
       });
       mqttClient.EnqueueAsync(SERVER_EVENTS_TOPIC, payload);
+    }
+
+    private void SetRankInDB(string name, int rank) {
+      Database.UpdateRows(PLAYERS_TABLE, RANK_FIELD + "=@0", "WHERE " + NAME_FIELD + "=@1", rank, name);
+    }
+
+    private void HandleModerationAction(ModAction action) {
+      switch (action.Type) {
+        case ModActionType.Rank: {
+          string username = PlayerInfo.FindExact(action.Target).name;
+          int rank = (int)((Group)action.Metadata).Permission;
+
+          string payload = JsonConvert.SerializeObject(new {
+            type = "player_rank",
+            username = username,
+            rank = rank,
+          });
+          mqttClient.EnqueueAsync(SERVER_EVENTS_TOPIC, payload);
+
+          SetRankInDB(username, rank);
+
+          break;
+        }
+      }
     }
 
     private bool validName(string username) {

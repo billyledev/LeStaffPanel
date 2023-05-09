@@ -18,7 +18,7 @@ import logger from '@/utils/logger';
 import { CODE_REGEX } from '@/utils/regex';
 import mysql from '@/utils/mysql';
 
-import { getPlayerInfos, getCode, deleteCode } from '@/models/player';
+import { getPlayerDataFromDB, getUsernameFromCode, deleteCodeFromDB } from '@/models/player';
 
 const router = Router();
 
@@ -44,7 +44,7 @@ router.get('/infos', async (req, res) => {
     }
     const { username } = decoded;
 
-    const infos = await getPlayerInfos(username);
+    const infos = await getPlayerDataFromDB(username);
     logger.info(`${infos.username} requested account informations.`);
     res.status(StatusCodes.OK).json({
       status: 'success',
@@ -79,7 +79,7 @@ router.post('/login', async (req, res) => {
       return;
     }
 
-    const username = await getCode(code);
+    const username = await getUsernameFromCode(code);
     if (username == null) {
       res.status(StatusCodes.BAD_REQUEST).json({
         status: 'error',
@@ -88,7 +88,7 @@ router.post('/login', async (req, res) => {
       return;
     }
 
-    await deleteCode(username);
+    await deleteCodeFromDB(username); 
 
     const jwt_token = jwt.sign({
       username,
@@ -130,7 +130,7 @@ router.get('/wear/:item', async (req, res) => {
       return;
     }
     const { username } = decoded;
-    const infos = await getPlayerInfos(username);
+    const infos = await getPlayerDataFromDB(username);
 
     const { item } = req.params;
     if (infos.cosmeticsOwned.indexOf(item) === -1) {

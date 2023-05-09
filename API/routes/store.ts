@@ -7,7 +7,7 @@ import { JWT_SECRET } from '@/secrets';
 import logger from '@/utils/logger';
 import mysql from '@/utils/mysql';
 
-import { getPlayerInfos } from '@/models/player';
+import { getPlayerDataFromDB } from '@/models/player';
 import { getStoreData, getItemData } from '@/models/store';
 
 const router = Router();
@@ -50,7 +50,7 @@ router.get('/buy/:item', async (req, res) => {
       return;
     }
     const { username } = decoded;
-    const infos = await getPlayerInfos(username);
+    const infos = await getPlayerDataFromDB(username);
 
     const storeData = getStoreData();
     const { item } = req.params;
